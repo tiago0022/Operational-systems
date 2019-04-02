@@ -12,7 +12,6 @@
  * Copyright John Wiley & Sons - 2013
  */
 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -23,77 +22,95 @@
 #include <time.h>
 #include <stdlib.h>
 
+int CharToInt(char c)
+{
+	return 48 - c;
+}
 
+char GetRandChar()
+{
+	int r = rand(); // Returns a pseudo-random integer between 0 and RAND_MAX.
+	return rand() % 26 + 65;
+}
 int main()
 {
-	const int SIZE = 1000004096;
+	const int VEC_MEM_SIZE = 1000004096;
+	const int SUM_MEM_SIZE = 1024;
 	const int VEC_SIZE = 500;
-	const char *name = "shared_memory";
+	const char NUMBER_OF_PROCESSES = 4;
+	const char CHAR_SEARCHED = 'G';
+	const char *vector_memory = "shared_memory";
+	const char *sum_memory = "sum_memory";
 
-	int shm_fd;
-	char *ptr, *start;
+	int vector_shm_fd, sum_shm_fd, i;
+	char *vectorPtr, *start;
+	int *sumPtr;
 
-srand(time(NULL));   // Initialization, should only be called once.
-int r = rand();      // Returns a pseudo-random integer between 0 and RAND_MAX.
+	srand(time(NULL)); // Initialization, should only be called once.
 
-	/* Cria um segmento de memória compartilhado
-	e retorna um descritor de arquivo. Este
-	arquivo não existe fisicamente em disco,
-	ele é apenas um arquivo virtual criado em
-	em um sistema de arquivos temporário (tmpfs)
-	dentro de /dev/shm/xxx. */
-	shm_fd = shm_open(name, O_CREAT | O_RDWR, 0666);
+	/* Cria um segmento de memória compartilhado e retorna um descritor de arquivo. Este
+	arquivo não existe fisicamente em disco, ele é apenas um arquivo virtual criado em
+	em um sistema de arquivos temporário (tmpfs) dentro de /dev/shm/xxx. */
+	vector_shm_fd = shm_open(vector_memory, O_CREAT | O_RDWR, 0666);
+	sum_shm_fd = shm_open(sum_memory, O_CREAT | O_RDWR, 0666);
 
-	/*shm_open: cria ou abre um objeto de
-	memória compartilhado.
+	/* O tamanho inicial de um segmento é de 0 bytes. A função "ftruncate" define o tamanho do segmento.*/
+	ftruncate(vector_shm_fd, VEC_MEM_SIZE);
+	ftruncate(sum_shm_fd, SUM_MEM_SIZE);
 
-	/* O tamanho inicial de um segmento é de 0 bytes.
-	A função "ftruncate" define o tamanho do
-	segmento.*/
-	ftruncate(shm_fd,SIZE);
-
-	/* Mapeia o segmento de memória para o espaço
-	 de endereçamento do processo. Dessa forma, o
-	segmento poderá ser acessado por meio de um
-	ponteiro.
-
-	/* O primeiro parâmetro "0" indica que o kernel
-	escolhe o endereço no qual o mapeamento será
-	criado. Valores diferentes de "0" são utilizados
-	como sugestões para o Kernel.
-	O último parâmetro "0" indica o ponto de início
-	do mapeamento no arquivo.
-	No caso abaixo, o mapeamento contém SIZE bytes
-	iniciando em 0.*/
-	ptr = mmap(0,SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
-	if (ptr == MAP_FAILED) {
+	/* O primeiro parâmetro "0" indica que o kernel escolhe o endereço no qual o mapeamento será
+	criado. Valores diferentes de "0" são utilizados como sugestões para o Kernel.
+	O último parâmetro "0" indica o ponto de início do mapeamento no arquivo.
+	No caso abaixo, o mapeamento contém SIZE bytes iniciando em 0.*/
+	vectorPtr = mmap(0, VEC_MEM_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, vector_shm_fd, 0);
+	sumPtr = mmap(0, SUM_MEM_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, sum_shm_fd, 0);
+	if (vectorPtr == MAP_FAILED || sumPtr == MAP_FAILED)
+	{
 		printf("Map failed\n");
 		return -1;
 	}
-	/*Depois que o segmento de memória foi
-	mapeado para o espaço de endereçamento
-	do processo, o arquivo ("shm_fd") pode
-	ser fechado.*/
 
 	/*Escreve na memória compartilhada.*/
-	start = ptr;
-	//sprintf(ptr,"Hello: ");
-	//ptr += 7; //Move o ponteiro
-	char c;
-	int i;
-	for (i=0; i < VEC_SIZE; ptr++, i++){
-					c = rand()%26+65;
-	      	*ptr = c;
+	start = vectorPtr;
+	//vectorPtr += 7; //Move o ponteiro
+	*vectorPtr = CHAR_SEARCHED;
+	vectorPtr++;
+	*vectorPtr = '4';
+	vectorPtr++;
+
+	printf("Writing in Sum Memory:\n");
+	for (i = 0; i < (int) NUMBER_OF_PROCESSES; i++)
+	{
+		*sumPtr = -1;
+		printf("%d ", *(sumPtr));
+		sumPtr++;
 	}
-	*ptr = '\0';
-	ptr++;
-	*ptr='G';
-	ptr++;
-	*ptr = -1;
-	// printf("aa %d\n", '\0');
-	// ptr++;
-	// *ptr = VEC_SIZE;
-	// sleep(30);
-	//memcpy(ptr,"conteudo",tamanho);
+	*sumPtr = '\0';
+	printf("\n\n");
+
+	char c;
+	//int i;
+	printf("Writing in Vector Memory:\n");
+	printf("vetor -> ");
+	for (i = 0; i < VEC_SIZE; vectorPtr++, i++)
+	{
+		c = GetRandChar();
+		printf("%c", c);
+		*vectorPtr = c;
+	}
+	printf("\n");
+	*vectorPtr = '\0';
+	vectorPtr++;
+	for (i = 0; i < NUMBER_OF_PROCESSES; i++, vectorPtr++)
+	{
+		*vectorPtr = -1;
+		vectorPtr += i;
+	}
+	// *vectorPtr = 'G';
+	// vectorPtr++;
+	// *vectorPtr = NUMBER_OF_PROCESSES;
+	// vectorPtr++;
+
+	//memcpy(vectorPtr,"conteudo",tamanho);
 	return 0;
 }

@@ -18,44 +18,94 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
 
+int getVectorInit(int vec_size, int myProcessNumber, int numberOfProcesses)
+{
+	int part = vec_size / numberOfProcesses * (myProcessNumber - 1);
+	printf("part -> %d\n", part);
+	return part;
+}
+
 int main()
 {
-	const char *name = "shared_memory";
-	const int SIZE = 1000004096;
+	const char *vector_memory = "shared_memory";
+	const char *sum_memory = "sum_memory";
+	const int VEC_MEM_SIZE = 1000004096;
+	const int SUM_MEM_SIZE = 1024;
+	int numberOfProcesses = 0, myProcessNumber = 1;
+	//const int SIZE = 1000004096;
 
-	int shm_fd;
-	void *ptr;
-	int i;
+	int vector_shm_fd, sum_shm_fd, i;
+	char *vectorPtr, *start;
+	int *sumPtr;
 
 	/* open the shared memory segment */
-	shm_fd = shm_open(name, O_RDONLY, 0666);
-	if (shm_fd == -1) {
+	vector_shm_fd = shm_open(vector_memory, O_RDONLY, 0666);
+	sum_shm_fd = shm_open(sum_memory, O_RDWR, 0666);
+	if (vector_shm_fd == -1 || sum_shm_fd == -1)
+	{
 		printf("shared memory failed\n");
 		exit(-1);
 	}
 
 	/* now map the shared memory segment in the
 	address space of the process */
-	ptr = mmap(0,SIZE, PROT_READ, MAP_SHARED, shm_fd, 0);
-	if (ptr == MAP_FAILED) {
+	vectorPtr = mmap(0, VEC_MEM_SIZE, PROT_READ, MAP_SHARED, vector_shm_fd, 0);
+	sumPtr = (int *)mmap(0, SUM_MEM_SIZE, PROT_READ, MAP_SHARED, sum_shm_fd, 0);
+	if (vectorPtr == MAP_FAILED || sumPtr == MAP_FAILED)
+	{
 		printf("Map failed\n");
 		exit(-1);
 	}
 
+	printf("Reading Sum Memory:\n");
+
+	while (1)
+	{
+		int value = *sumPtr;
+		printf("%d ", value);
+		if (value == '\0')
+		{
+			break;
+		}
+		if (value != -1)
+		{
+			myProcessNumber++;
+		}
+		numberOfProcesses++;
+		sumPtr++;
+	}
+	printf("\nnumberOfProcesses = %d\n", numberOfProcesses);
+	printf("myProcessNumber = %d\n", myProcessNumber);
+
 	/* now read from the shared memory region */
 	int count = 0;
-	// printf("o  %d\n", strlen(ptr));
-	int vec_size = ((int*)(strlen(ptr)));
-	char target = *((char*)(ptr+strlen(ptr)+1));
-	for(i = 0; i < vec_size; i++){
-		if(*((char*)ptr + i) == target)
+
+	puts("antes do putsssss");
+	char target = *((char *)(vectorPtr));
+	// char numberOfProcessChar = *((char *)(vectorPtr + 1));
+	// int numberOfProcess = CharToInt(numberOfProcessChar);
+	int vec_size = (int *)(strlen(vectorPtr) - 2);
+
+	start = vectorPtr + getVectorInit(vec_size, myProcessNumber, numberOfProcesses);
+	printf("%d / %d\n", start, (vec_size / numberOfProcesses) + start);
+	for (i = start; i < (vec_size / numberOfProcesses) + start; i++)
+	{
+		//printf("%d ", i-start);
+		if (*((char *)vectorPtr + i) == target)
 			count++;
 	}
-	printf("%d letras ", count);
-	printf("%c\n", target);
-	printf("%s\n",((char*)ptr));
-	printf("%d\n", vec_size);
-	printf("%d\n", ((int*)(ptr+strlen(ptr)+2));
+		puts("putssssssss");
+	printf("\n\nReading Vector Memory:\n");
+	printf("%d letras %c\n", count, target);
+	printf("vetor -> %s\n", (char *)(vectorPtr + myProcessNumber));
+	printf("vec_size -> %d\n", vec_size);
+	printf("numberOfProcess -> %d\n", numberOfProcesses);
+
+	// for (i = 0; i < numberOfProcess; i++, ptr++)
+	// {
+	// 	*ptr = -1;
+	// 	ptr += i;
+	// }
 
 	// sleep(10);
 	/* remove the shared memory segment */
