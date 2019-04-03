@@ -35,7 +35,7 @@ int main()
 	//const int SIZE = 1000004096;
 
 	int vector_shm_fd, sum_shm_fd, i;
-	char *vectorPtr, *start;
+	int *vectorPtr, *start;
 	int *sumPtr;
 
 	/* open the shared memory segment */
@@ -49,7 +49,7 @@ int main()
 
 	/* now map the shared memory segment in the
 	address space of the process */
-	vectorPtr = mmap(0, VEC_MEM_SIZE, PROT_READ, MAP_SHARED, vector_shm_fd, 0);
+	vectorPtr = (int *)mmap(0, VEC_MEM_SIZE, PROT_READ, MAP_SHARED, vector_shm_fd, 0);
 	sumPtr = (int *)mmap(0, SUM_MEM_SIZE, PROT_READ, MAP_SHARED, sum_shm_fd, 0);
 	if (vectorPtr == MAP_FAILED || sumPtr == MAP_FAILED)
 	{
@@ -80,28 +80,31 @@ int main()
 	/* now read from the shared memory region */
 	int count = 0;
 
-	puts("antes do putsssss");
+	// puts("antes do putsssss");
 	char target = *((char *)(vectorPtr));
 	// char numberOfProcessChar = *((char *)(vectorPtr + 1));
 	// int numberOfProcess = CharToInt(numberOfProcessChar);
-	int vec_size = (int *)(strlen(vectorPtr) - 2);
+	int vec_size = (int)((strlen((char*)vectorPtr)) - 2);
 
 	start = vectorPtr + getVectorInit(vec_size, myProcessNumber, numberOfProcesses);
-	printf("%d / %d\n", start, (vec_size / numberOfProcesses) + start);
-	for (i = start; i < (vec_size / numberOfProcesses) + start; i++)
+	printf("%d / %d\n", start, (vec_size / numberOfProcesses));
+	// for (i = start; i < ((vec_size / numberOfProcesses) + start); i++)
+	for (i = 2; i < (int) ((vec_size / numberOfProcesses)+2); i++)
 	{
-		//printf("%d ", i-start);
-		if (*((char *)vectorPtr + i) == target)
+		printf("%c, ", ((char*)start)[i]);
+		if (((char*)start)[i] == target)
 			count++;
 	}
-		puts("putssssssss");
+		puts("\nputssssssss");
 	printf("\n\nReading Vector Memory:\n");
 	printf("%d letras %c\n", count, target);
-	printf("vetor -> %s\n", (char *)(vectorPtr + myProcessNumber));
+	printf("vetor -> %s\n", (char *)(vectorPtr));
 	printf("vec_size -> %d\n", vec_size);
 	printf("numberOfProcess -> %d\n", numberOfProcesses);
 
-	// for (i = 0; i < numberOfProcess; i++, ptr++)
+	
+	
+	// for (i = 0; i < numberOfProcesses; i++, ptr++)
 	// {
 	// 	*ptr = -1;
 	// 	ptr += i;
