@@ -62,7 +62,7 @@ int main()
 {
 	const int VEC_MEM_SIZE = 1000004096;
 	const int SUM_MEM_SIZE = 1024;
-	const int VEC_SIZE = 500;
+	const int VEC_SIZE = 1000000000;
 	const char NUMBER_OF_PROCESSES = 4;
 	const char CHAR_SEARCHED = 'G';
 	const char *vector_memory = "shared_memory";
@@ -123,7 +123,7 @@ int main()
 	for (i = 0; i < VEC_SIZE; vectorPtr++, i++)
 	{
 		c = GetRandChar();
-		printf("%c", c);
+		// printf("%c", c);
 		*vectorPtr = c;
 	}
 	printf("\n");

@@ -98,20 +98,20 @@ int main()
 	int vec_size = (int)((strlen((char *)vectorPtr)) - 2);
 
 	int myPartStart = getVectorInit(vec_size, myProcessNumber, numberOfProcesses);
-	vectorPtrStart = vectorPtr + myPartStart;
+	vectorPtrStart = vectorPtr;// + myPartStart;
 	printf("%d / %d\n", vectorPtrStart, (vec_size / numberOfProcesses) + vectorPtrStart);
 	// for (i = vectorPtrStart; i < ((vec_size / numberOfProcesses) + vectorPtrStart); i++)
 	int count = 0;
-	for (i = 2 + myPartStart; i < (int)((vec_size / numberOfProcesses) + 2 + myPartStart); i++)
+	for (i = 2; i < (int)((vec_size / numberOfProcesses) +2); i++)
 	{
-		printf("posicao %d, valor %c  |  ", i, ((char *)vectorPtrStart)[i]);
-		if (((char *)vectorPtrStart)[i] == target)
+		// printf("posicao %d, valor %c  |  ", i+myPartStart, ((char *)vectorPtrStart)[i+myPartStart]);
+		if (((char *)vectorPtrStart)[i+myPartStart] == target)
 			count++;
 	}
 
 	printf("\n\nReading Vector Memory:\n");
 	printf("%d letras %c\n", count, target);
-	printf("vetor -> %s\n", (char *)(vectorPtr));
+	// printf("vetor -> %s\n", (char *)(vectorPtr));
 	printf("vec_size -> %d\n", vec_size);
 	printf("numberOfProcess -> %d\n", numberOfProcesses);
 
