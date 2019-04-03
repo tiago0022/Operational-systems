@@ -22,16 +22,42 @@
 #include <time.h>
 #include <stdlib.h>
 
-int CharToInt(char c)
-{
-	return 48 - c;
-}
-
 char GetRandChar()
 {
 	int r = rand(); // Returns a pseudo-random integer between 0 and RAND_MAX.
 	return rand() % 26 + 65;
 }
+
+int CheckAllSumsIsOver(int* ptr, int NUMBER_OF_PROCESSES){
+	int i;
+	for (i = 0; i < (int) NUMBER_OF_PROCESSES; i++)
+	{
+		int value = *(ptr);
+		printf("%d ", value);
+		if(value == -1){
+			printf("Sums arent over\n");
+			return 0;
+		}
+		ptr++;
+	}
+	printf("Sums are done!\n");
+	return 1;
+}
+
+int SumAllValues(int* ptr, int NUMBER_OF_PROCESSES){
+	int i, sum = 0;
+	for (i = 0; i < (int) NUMBER_OF_PROCESSES; i++)
+	{
+		int value = *(ptr);
+		if(value < 0){
+			return sum;
+		}
+		sum += value;
+		ptr++;
+	}
+	return sum;
+}
+
 int main()
 {
 	const int VEC_MEM_SIZE = 1000004096;
@@ -43,8 +69,8 @@ int main()
 	const char *sum_memory = "sum_memory";
 
 	int vector_shm_fd, sum_shm_fd, i;
-	char *vectorPtr, *start;
-	int *sumPtr;
+	char *vectorPtr, *vectorPtrStart;
+	int *sumPtr, *sumPtrStart;
 
 	srand(time(NULL)); // Initialization, should only be called once.
 
@@ -70,8 +96,10 @@ int main()
 		return -1;
 	}
 
-	/*Escreve na memória compartilhada.*/
-	start = vectorPtr;
+	// Guarda as posições iniciais dos ponteiros
+	vectorPtrStart = vectorPtr;
+	sumPtrStart = sumPtr;
+
 	//vectorPtr += 7; //Move o ponteiro
 	*vectorPtr = CHAR_SEARCHED;
 	vectorPtr++;
@@ -85,7 +113,7 @@ int main()
 		printf("%d ", *(sumPtr));
 		sumPtr++;
 	}
-	*sumPtr = '\0';
+	*sumPtr = -2;
 	printf("\n\n");
 
 	char c;
@@ -106,10 +134,12 @@ int main()
 		*vectorPtr = -1;
 		vectorPtr += i;
 	}
-	// *vectorPtr = 'G';
-	// vectorPtr++;
-	// *vectorPtr = NUMBER_OF_PROCESSES;
-	// vectorPtr++;
+
+	do{
+		sleep(1);
+	} while(CheckAllSumsIsOver(sumPtrStart, NUMBER_OF_PROCESSES) == 0);
+
+	printf("\nSoma dos caracteres = %d\n", SumAllValues(sumPtrStart, NUMBER_OF_PROCESSES));
 
 	//memcpy(vectorPtr,"conteudo",tamanho);
 	return 0;
